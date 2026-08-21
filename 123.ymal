@@ -1,0 +1,146 @@
+port: 7890
+allow-lan: true
+mode: rule
+log-level: info
+unified-delay: true
+dns:
+  enable: true 
+  listen: "0.0.0.0:1053"
+  ipv6: true
+  prefer-h3: false
+  respect-rules: true
+  use-system-hosts: false
+  cache-algorithm: "arc"
+  enhanced-mode: "fake-ip"
+  fake-ip-range: "198.18.0.1/16"
+  fake-ip-filter:
+    - "+.lan"
+    - "+.local"
+    - "+.msftconnecttest.com"
+    - "+.msftncsi.com"
+    - "localhost.ptlogin2.qq.com"
+    - "localhost.sec.qq.com"
+    - "+.in-addr.arpa"
+    - "+.ip6.arpa"
+    - "time.*.com"
+    - "time.*.gov"
+    - "pool.ntp.org"
+    - "localhost.work.weixin.qq.com"
+  default-nameserver: ["223.5.5.5", "119.29.29.29"]
+  nameserver:
+    - "https://1.1.1.1/dns-query"
+    - "https://8.8.8.8/dns-query"
+  proxy-server-nameserver:
+    - "https://223.5.5.5/dns-query"
+    - "https://doh.pub/dns-query"
+
+proxies:
+- name: vless-reality-vision-instance-20260327-061123               
+  type: vless
+  server: 35.212.224.130                           
+  port: 26480                                
+  uuid: ff7a9359-aa4e-446d-93d7-f4f7780c12c3   
+  network: tcp
+  udp: true
+  tls: true
+  flow: xtls-rprx-vision
+  servername: apple.com                 
+  reality-opts: 
+    public-key: eUO10npfT7qlfSh9kd8oMjJ5eJ6vMoLWP3XXQMsJDlg    
+    short-id: 29b40ded                      
+  client-fingerprint: chrome                  
+
+- name: vmess-ws-instance-20260327-061123                         
+  type: vmess
+  server: free.19960110.xyz                        
+  port: 2087                                     
+  uuid: ff7a9359-aa4e-446d-93d7-f4f7780c12c3       
+  alterId: 0
+  cipher: auto
+  udp: true
+  tls: true
+  network: ws
+  servername: free.19960110.xyz                    
+  ws-opts:
+    path: "ff7a9359-aa4e-446d-93d7-f4f7780c12c3-vm"                             
+    headers:
+      Host: free.19960110.xyz                     
+
+- name: hysteria2-instance-20260327-061123                            
+  type: hysteria2                                      
+  server: free.19960110.xyz                               
+  port: 51100
+  ports: 
+  password: ff7a9359-aa4e-446d-93d7-f4f7780c12c3                          
+  alpn:
+    - h3
+  sni: free.19960110.xyz                               
+  skip-cert-verify: false
+  fast-open: true
+
+- name: tuic5-instance-20260327-061123                            
+  server: free.19960110.xyz                      
+  port: 56504                                    
+  type: tuic
+  uuid: ff7a9359-aa4e-446d-93d7-f4f7780c12c3       
+  password: ff7a9359-aa4e-446d-93d7-f4f7780c12c3   
+  alpn: [h3]
+  disable-sni: false
+  reduce-rtt: true
+  udp-relay-mode: native
+  congestion-controller: bbr
+  sni: free.19960110.xyz                                
+  skip-cert-verify: false
+
+- name: anytls-instance-20260327-061123
+  type: anytls
+  server: free.19960110.xyz
+  port: 12552
+  password: ff7a9359-aa4e-446d-93d7-f4f7780c12c3
+  client-fingerprint: chrome
+  udp: true
+  idle-session-check-interval: 30
+  idle-session-timeout: 30
+  sni: free.19960110.xyz
+  skip-cert-verify: false
+
+proxy-groups:
+- name: 负载均衡
+  type: load-balance
+  url: https://www.gstatic.com/generate_204
+  interval: 300
+  strategy: round-robin
+  proxies:
+    - vless-reality-vision-instance-20260327-061123                              
+    - vmess-ws-instance-20260327-061123
+    - hysteria2-instance-20260327-061123
+    - tuic5-instance-20260327-061123
+    - anytls-instance-20260327-061123
+
+- name: 自动选择
+  type: url-test
+  url: https://www.gstatic.com/generate_204
+  interval: 300
+  tolerance: 50
+  proxies:
+    - vless-reality-vision-instance-20260327-061123                              
+    - vmess-ws-instance-20260327-061123
+    - hysteria2-instance-20260327-061123
+    - tuic5-instance-20260327-061123
+    - anytls-instance-20260327-061123
+    
+- name: 🌍选择代理节点
+  type: select
+  proxies:
+    - 负载均衡                                         
+    - 自动选择
+    - DIRECT
+    - vless-reality-vision-instance-20260327-061123                              
+    - vmess-ws-instance-20260327-061123
+    - hysteria2-instance-20260327-061123
+    - tuic5-instance-20260327-061123
+    - anytls-instance-20260327-061123
+rules:
+  - GEOIP,LAN,DIRECT
+  - GEOIP,CN,DIRECT
+  - MATCH,🌍选择代理节点
